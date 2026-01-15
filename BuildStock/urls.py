@@ -2,31 +2,34 @@ from django.contrib import admin
 from django.urls import path, include
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
-from drf_yasg import renderers
 from rest_framework import permissions
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView, TokenRefreshView
-)
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+# --- Configuration Swagger / OpenAPI ---
 schema_view = get_schema_view(
-   openapi.Info(
-      title="BuildStock API",
-      default_version='v1',
-      description="Documentation API de BuildStock",
-   ),
-   public=True,
-   permission_classes=(permissions.AllowAny,),
+    openapi.Info(
+        title="BuildStock API",
+        default_version='v1',
+        description="Documentation API de BuildStock",
+    ),
+    public=True,
+    permission_classes=(permissions.AllowAny,),
 )
-
 
 urlpatterns = [
+    #  Admin 
     path('admin/', admin.site.urls),
+
+    #  API de l'application 
     path('api/', include('users.urls')),
-    # JWT endpoints
+
+    #  JWT  
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    # Swagger UI
+
+    #  Documentation Swagger 
     path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger.yaml', schema_view.without_ui(cache_timeout=0, renderer_classes=[renderers.OpenAPIRenderer]), name='schema-yaml')
+    path('swagger.yaml', schema_view.without_ui(cache_timeout=0), name='schema-yaml'),
+    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 ]
