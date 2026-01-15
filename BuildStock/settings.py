@@ -59,6 +59,7 @@ SWAGGER_SETTINGS = {
             'in': 'header'
         }
     },
+    'USE_SESSION_AUTH': False,
 }
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -80,6 +81,8 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
+    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.openapi.AutoSchema',
+
 }
 SIMPLE_JWT = { "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1), "REFRESH_TOKEN_LIFETIME": timedelta(days=1), }
 
