@@ -27,7 +27,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 SECRET_KEY = 'django-insecure-sp=18^w@8l7)yeejan(2(d23*02_ielhvvh8his+24m8b$i7rh'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 
 ALLOWED_HOSTS = ["*"]
@@ -48,6 +48,21 @@ INSTALLED_APPS = [
     'drf_yasg',
     'users'
 ]
+
+
+SWAGGER_SETTINGS = {
+    'USE_SESSION_AUTH': False,
+    'SECURITY_DEFINITIONS': {
+        'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+        }
+    },
+}
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
