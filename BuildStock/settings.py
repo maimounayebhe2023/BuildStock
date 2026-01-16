@@ -45,21 +45,19 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework_simplejwt',
     'rest_framework',
-    'drf_yasg',
+    'drf_spectacular',
     'users'
 ]
 
 
-SWAGGER_SETTINGS = {
-    'USE_SESSION_AUTH': False,
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header'
-        }
-    },
-    'USE_SESSION_AUTH': False,
+SSPECTACULAR_SETTINGS = {
+    'TITLE': 'BuildStock API',
+    'DESCRIPTION': 'Documentation de l’API BuildStock',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+
+   
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -81,7 +79,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticated',
     ],
-    'DEFAULT_SCHEMA_CLASS': 'rest_framework.schemas.openapi.AutoSchema',
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
 
 }
 SIMPLE_JWT = { "ACCESS_TOKEN_LIFETIME": timedelta(minutes=1), "REFRESH_TOKEN_LIFETIME": timedelta(days=1), }
