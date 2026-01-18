@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Product, ProductCategory
+from .models import Product, ProductCategory,ProductUnit
 
 
 class ProductCategorySerializer(serializers.ModelSerializer):
@@ -18,3 +18,21 @@ class ProductSerializer(serializers.ModelSerializer):
         if Product.objects.filter(name=value).exists():
             raise serializers.ValidationError('Un produit avec ce nom existe déjà')
         return value
+
+
+class ProductUnitSerializer(serializers.ModelSerializer):
+    product_name= serializers.CharField(source='product.name', read_only=True)
+
+    class Meta:
+        model=ProductUnit
+        fields= ['product', 'product_name', 'id', 'unit_name','factor_to_base','is_base' ]
+      
+    def validate(self, data):
+        if data.get('is_base') and ProductUnit.objects.filter(
+            product=data['product'],
+            is_base=True
+        ).exists():
+            raise serializers.ValidationError(
+                "Ce produit a déjà une unité de base."
+            )
+        return data
