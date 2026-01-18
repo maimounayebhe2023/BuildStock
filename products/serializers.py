@@ -19,20 +19,35 @@ class ProductSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError('Un produit avec ce nom existe déjà')
         return value
 
-
 class ProductUnitSerializer(serializers.ModelSerializer):
-    product_name= serializers.CharField(source='product.name', read_only=True)
+    product_name = serializers.CharField(source='product.name', read_only=True)
 
     class Meta:
-        model=ProductUnit
-        fields= ['product', 'product_name', 'id', 'unit_name','factor_to_base','is_base' ]
-      
+        model = ProductUnit
+        fields = ['id','product', 'product_name', 'unit_name',  'factor_to_base','is_base']
+
     def validate(self, data):
-        if data.get('is_base') and ProductUnit.objects.filter(
-            product=data['product'],
-            is_base=True
-        ).exists():
-            raise serializers.ValidationError(
-                "Ce produit a déjà une unité de base."
+        if data.get('is_base'):
+            qs = ProductUnit.objects.filter(
+                product=data['product'],
+                is_base=True
             )
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
         return data
+
+    def create(self, validated_data):
+        if validated_data.get('is_base'):
+            ProductUnit.objects.filter(
+                product=validated_data['product'],
+                is_base=True
+            ).update(is_base=False)
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        if validated_data.get('is_base'):
+            ProductUnit.objects.filter(
+                product=instance.product,
+                is_base=True
+            ).exclude(pk=instance.pk).update(is_base=False)
+        return super().update(instance, validated_data)

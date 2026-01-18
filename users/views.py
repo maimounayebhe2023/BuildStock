@@ -31,7 +31,7 @@ from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiExam
                 summary="Example of a valid request body",
                 description="All required fields for creating a user",
                 value={
-                    "username": "WfxDKmesm5PAJ7KknbW-IebaK2xkWAtiSzVA1DP",
+                    "username": "john",
                     "first_name": "John",
                     "last_name": "Doe",
                     "email": "user@example.com",
