@@ -1,19 +1,26 @@
 import os
 import django
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "buildstock.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "BuildStock.settings")
 django.setup()
 
 from django.contrib.auth import get_user_model
 
 User = get_user_model()
 
-username = "test"
-email = "test@example.com"
-password = "Test@2026"
+username = os.getenv("DJANGO_SUPERUSER_USERNAME")
+email = os.getenv("DJANGO_SUPERUSER_EMAIL")
+password = os.getenv("DJANGO_SUPERUSER_PASSWORD")
 
-if not User.objects.filter(username=username).exists():
-    User.objects.create_superuser(username=username, email=email, password=password)
-    print(f"Superuser '{username}' créé avec succès.")
+if username and password:
+    if not User.objects.filter(username=username).exists():
+        User.objects.create_superuser(
+            username=username,
+            email=email,
+            password=password
+        )
+        print("Superuser créé avec succès")
+    else:
+        print("Superuser existe déjà")
 else:
-    print(f"Superuser '{username}' existe déjà.")
+    print(" Variables d'environnement manquantes")
