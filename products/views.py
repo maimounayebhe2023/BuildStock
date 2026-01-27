@@ -4,17 +4,11 @@ from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema, OpenApiExample, OpenApiParameter
-
-from .models import Product, ProductCategory, ProductUnit, Unit
-from .serializers import ProductSerializer, ProductCategorySerializer, ProductUnitSerializer, UnitSerializer
-
-
-# Pagination class
-class StandardPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = 'page_size'
-    max_page_size = 100
+from .pagination import GlobalPagination
+from .models import Product, ProductCategory, Unit
+from .serializers import ProductSerializer, ProductCategorySerializer, UnitSerializer
 
 
 # --- ProductCategory ---
@@ -44,87 +38,73 @@ class ProductCategoryListCreateAPIView(APIView):
 # --- Product ---
 class ProductListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    pagination_class = GlobalPagination
 
-    @extend_schema(responses=ProductSerializer, description="Retrieve all products")
+    @extend_schema(responses=ProductSerializer, description="List all products with optional search and pagination")
     def get(self, request):
-        products = Product.objects.all()
-        serializer = ProductSerializer(products, many=True)
-        return Response(serializer.data)
+        search_query = request.GET.get('search', '')
+        products = Product.objects.all().order_by('name')
 
-    @extend_schema(
-        request=ProductSerializer,
-        responses={201: ProductSerializer, 400: None},
-        description="Create a new product with optional category creation.",
-        examples=[OpenApiExample("Example Product", summary="Create product", value={
-            "name": "Cement 50kg",
-            "category": "Fer",
-            "description": "High quality cement",
-            "is_active": True
-        })]
-    )
+        if search_query:
+            products = products.filter(
+                Q(name__icontains=search_query) |
+                Q(description__icontains=search_query)
+            )
+
+        paginator = self.pagination_class()
+        paginated_products = paginator.paginate_queryset(products, request)
+        serializer = ProductSerializer(paginated_products, many=True)
+        return paginator.get_paginated_response(serializer.data)
+
+    @extend_schema(request=ProductSerializer, responses={201: ProductSerializer, 400: None}, description="Create a new product")
     def post(self, request):
-        data = request.data.copy()
-        category_name = data.get('category')
-        if category_name:
-            category, _ = ProductCategory.objects.get_or_create(name=category_name.strip())
-            data['category'] = category.id
-        else:
-            data['category'] = None
-
-        serializer = ProductSerializer(data=data)
+        serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            product = serializer.save()
+            return Response(ProductSerializer(product).data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-# --- ProductUnit ---
-class ProductUnitListCreateAPIView(APIView):
+class ProductDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    @extend_schema(
-        responses=ProductUnitSerializer,
-        parameters=[OpenApiParameter("product_id", type=int, description="Product ID")],
-        description="Retrieve all units for a given product"
-    )
-    def get(self, request, product_id):
-        units = ProductUnit.objects.filter(product_id=product_id)
-        serializer = ProductUnitSerializer(units, many=True)
-        return Response(serializer.data)
-
-    @extend_schema(
-        request=ProductUnitSerializer,
-        responses={201: ProductUnitSerializer, 400: None},
-        description="Create a new ProductUnit for a product"
-    )
-    def post(self, request, product_id):
-        data = request.data.copy()
-        data['product'] = product_id
-        serializer = ProductUnitSerializer(data=data)
+    @extend_schema(request=ProductSerializer, responses={200: ProductSerializer, 400: None}, description="Update a product fully")
+    def put(self, request, product_id):
+        product = get_object_or_404(Product, id=product_id)
+        serializer = ProductSerializer(product, data=request.data)
         if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            product = serializer.save()
+            return Response(ProductSerializer(product).data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    @extend_schema(request=ProductSerializer, responses={200: ProductSerializer, 400: None}, description="Update a product partially")
+    def patch(self, request, product_id):
+        product = get_object_or_404(Product, id=product_id)
+        serializer = ProductSerializer(product, data=request.data, partial=True)
+        if serializer.is_valid():
+            product = serializer.save()
+            return Response(ProductSerializer(product).data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 # --- Unit ---
 class UnitListCreateAPIView(APIView):
     permission_classes = [IsAuthenticated]
-    pagination_class = StandardPagination
+    pagination_class = GlobalPagination
 
     @extend_schema(
         responses=UnitSerializer,
         description="List all units with optional search and pagination."
     )
     def get(self, request):
-        search = request.query_params.get('search', '')
+        search_query = request.query_params.get('search', '')
         queryset = Unit.objects.all().order_by('name')
-        if search:
-            queryset = queryset.filter(Q(name__icontains=search) | Q(symbol__icontains=search))
+        if search_query:
+            queryset = queryset.filter(Q(name__icontains=search_query) | Q(symbol__icontains=search_query))
 
-        paginator = StandardPagination()
-        result_page = paginator.paginate_queryset(queryset, request)
-        serializer = UnitSerializer(result_page, many=True)
+        paginator = self.pagination_class()
+        paginated_units = paginator.paginate_queryset(queryset, request)
+        serializer = UnitSerializer(paginated_units, many=True)
         return paginator.get_paginated_response(serializer.data)
 
     @extend_schema(
